@@ -1,3 +1,4 @@
+# prepare JSON object for Environment Vairables
 locals {
   db_conn_vars = {
     database_host : var.db_host,
@@ -6,18 +7,22 @@ locals {
   }
 }
 
+# creating Lambda Layer with PyMySQL library 
 module "lambdalayer-python-pymysql" {
   source       = "techieinyou/lambdalayer-python/aws"
   version      = "1.0.0"
   library_name = "pymysql"
 }
 
+# creating Lambda Layer with Requests library
 module "lambdalayer-python-requests" {
   source       = "techieinyou/lambdalayer-python/aws"
   version      = "1.0.0"
   library_name = "requests"
 }
 
+# create Lambda and Scheduler EventBridge (CloudWatch Events) rule to trigger the lambda on given interval
+# this module will package Python source code from ./source-code folder and will upload to Lambda 
 module "scheduled-job" {
   source  = "techieinyou/scheduled-job/aws"
   version = "1.0.2"
@@ -26,6 +31,7 @@ module "scheduled-job" {
   lambda_language    = "python"
   source_code_folder = "./source-code"
   lambda_handler     = "lambda_function.lambda_handler"
+  schedule           = "rate(5 minutes)"
 
   lambda_execution_role = var.iam_role_arn
   lambda_layers         = [module.lambdalayer-python-pymysql.arn, module.lambdalayer-python-requests.arn]
